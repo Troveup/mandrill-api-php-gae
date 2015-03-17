@@ -62,17 +62,6 @@ class Mandrill {
         if(!$apikey) throw new Mandrill_Error('You must provide a Mandrill API key');
         $this->apikey = $apikey;
 
-        /*
-        $this->ch = curl_init();
-        curl_setopt($this->ch, CURLOPT_USERAGENT, 'Mandrill-PHP/1.0.54');
-        curl_setopt($this->ch, CURLOPT_POST, true);
-        curl_setopt($this->ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($this->ch, CURLOPT_HEADER, false);
-        curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($this->ch, CURLOPT_CONNECTTIMEOUT, 30);
-        curl_setopt($this->ch, CURLOPT_TIMEOUT, 600);
-         */
-
         $this->root = rtrim($this->root, '/') . '/';
 
         $this->templates = new Mandrill_Templates($this);
@@ -93,9 +82,6 @@ class Mandrill {
     }
 
     public function __destruct() {
-        /*
-        curl_close($this->ch);
-         */
         $params = json_encode($params);
     }
 
@@ -103,21 +89,25 @@ class Mandrill {
         $params['key'] = $this->apikey;
         $params = http_build_query($params); // should this be json encoded instead when POSTing?
 
-        // curl_setopt($this->ch, CURLOPT_FOLLOWLOCATION, true);
         $context = [ // see option docs @ http://php.net/manual/en/context.php
             'http' => [
                 'method' => 'POST',
-                // 'header' => "Content-type: application/json\r\n",
                 'user_agent' => 'Mandrill-PHP/1.0.54',
                 'timeout' => 30,
                 'content' => $params
             ]
         ];
         $context = stream_context_create($context);
-        $response_body = file_get_contents($this->root . $url . '.json', false, $context);
-        $result = json_decode($response_body, true);
-        var_dump("got here within fetch URL form call");
 
+        $start = microtime(true);
+        $this->log('Call to ' . $this->root . $url . '.json: ' . $params);
+
+        $response_body = file_get_contents($this->root . $url . '.json', false, $context);
+
+        $this->log('Completed in ' . number_format($time * 1000, 2) . 'ms');
+        $this->log('Got response: ' . $response_body);
+
+        $result = json_decode($response_body, true);
         if($result === null) throw new Mandrill_Error('We were unable to decode the JSON response from the Mandrill API: ' . $response_body);
         
         if(floor($info['http_code'] / 100) >= 4) {
@@ -127,6 +117,8 @@ class Mandrill {
         return $result;
     }
 
+    // there are bugs with curl on GAE but leave it here for now
+    // would be good to select one of these implementations via config or when instantiating
     public function curlCall($url, $params) {
         $params['key'] = $this->apikey;
         $params = json_encode($params);
