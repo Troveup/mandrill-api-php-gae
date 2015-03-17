@@ -82,7 +82,7 @@ class Mandrill {
     }
 
     public function __destruct() {
-        $params = json_encode($params);
+        // curl_close($this->ch);
     }
 
     public function call($url, $params) {
