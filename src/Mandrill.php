@@ -87,12 +87,12 @@ class Mandrill {
 
     public function call($url, $params) {
         $params['key'] = $this->apikey;
-        $params = http_build_query($params); // should this be json encoded instead when POSTing?
+        $params = json_encode($params);
 
         $context = [ // see option docs @ http://php.net/manual/en/context.php
             'http' => [
                 'method' => 'POST',
-                'user_agent' => 'Mandrill-PHP/1.0.54',
+                'header' => 'Content-type: application/json',
                 'timeout' => 30,
                 'content' => $params
             ]
@@ -102,7 +102,8 @@ class Mandrill {
         $start = microtime(true);
         $this->log('Call to ' . $this->root . $url . '.json: ' . $params);
 
-        $response_body = file_get_contents($this->root . $url . '.json', false, $context);
+        $fullURL = $this->root . $url . '.json';
+        $response_body = file_get_contents($fullURL, false, $context);
 
         $this->log('Completed in ' . number_format($time * 1000, 2) . 'ms');
         $this->log('Got response: ' . $response_body);
