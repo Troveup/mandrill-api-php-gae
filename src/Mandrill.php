@@ -62,6 +62,7 @@ class Mandrill {
         if(!$apikey) throw new Mandrill_Error('You must provide a Mandrill API key');
         $this->apikey = $apikey;
 
+        /*
         $this->ch = curl_init();
         curl_setopt($this->ch, CURLOPT_USERAGENT, 'Mandrill-PHP/1.0.54');
         curl_setopt($this->ch, CURLOPT_POST, true);
@@ -70,6 +71,7 @@ class Mandrill {
         curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($this->ch, CURLOPT_CONNECTTIMEOUT, 30);
         curl_setopt($this->ch, CURLOPT_TIMEOUT, 600);
+         */
 
         $this->root = rtrim($this->root, '/') . '/';
 
@@ -91,7 +93,9 @@ class Mandrill {
     }
 
     public function __destruct() {
+        /*
         curl_close($this->ch);
+         */
         $params = json_encode($params);
     }
 
@@ -103,7 +107,7 @@ class Mandrill {
         $context = [ // see option docs @ http://php.net/manual/en/context.php
             'http' => [
                 'method' => 'POST',
-                'header' => "Content-type: application/json\r\n",
+                // 'header' => "Content-type: application/json\r\n",
                 'user_agent' => 'Mandrill-PHP/1.0.54',
                 'timeout' => 30,
                 'content' => $params
@@ -111,10 +115,8 @@ class Mandrill {
         ];
         $context = stream_context_create($context);
         $response_body = file_get_contents($this->root . $url . '.json', false, $context);
-        var_dump($response_body);
-
         $result = json_decode($response_body, true);
-        var_dump($result);
+        var_dump("got here within fetch URL form call");
 
         if($result === null) throw new Mandrill_Error('We were unable to decode the JSON response from the Mandrill API: ' . $response_body);
         
