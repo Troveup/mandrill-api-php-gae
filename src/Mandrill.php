@@ -92,9 +92,40 @@ class Mandrill {
 
     public function __destruct() {
         curl_close($this->ch);
+        $params = json_encode($params);
     }
 
     public function call($url, $params) {
+        $params['key'] = $this->apikey;
+        $params = http_build_query($params); // should this be json encoded instead when POSTing?
+
+        // curl_setopt($this->ch, CURLOPT_FOLLOWLOCATION, true);
+        $context = [ // see option docs @ http://php.net/manual/en/context.php
+            'http' => [
+                'method' => 'POST',
+                'header' => "Content-type: application/json\r\n",
+                'user_agent' => 'Mandrill-PHP/1.0.54',
+                'timeout' => 30,
+                'content' => $params
+            ]
+        ];
+        $context = stream_context_create($context);
+        $response_body = file_get_contents($this->root . $url . '.json', false, $context);
+        var_dump($response_body);
+
+        $result = json_decode($response_body, true);
+        var_dump($result);
+
+        if($result === null) throw new Mandrill_Error('We were unable to decode the JSON response from the Mandrill API: ' . $response_body);
+        
+        if(floor($info['http_code'] / 100) >= 4) {
+            throw $this->castError($result);
+        }
+
+        return $result;
+    }
+
+    public function curlCall($url, $params) {
         $params['key'] = $this->apikey;
         $params = json_encode($params);
         $ch = $this->ch;
